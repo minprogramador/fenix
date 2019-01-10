@@ -1,5 +1,7 @@
 <?php
 
+date_default_timezone_set('America/Sao_Paulo');
+
 use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
 use \React\EventLoop\Factory;
@@ -134,27 +136,47 @@ $loop->addPeriodicTimer(30.000, function () use (&$proxy, $url) {
 	$url  = $url[0];
 
 	echo "\nTotal proxys:\t\t\t".count($proxy)." ---> iniciando testes....\n";
-	
-	foreach($proxy as $pr) {
-		if(!stristr($pr, ':')){
-			continue;
-		}
 
-		$test = curl($url, null, null, true, null, false, $pr, 5);
-
-		if(stristr($test, '200 OK')){
-		    echo "proxy:\t\t\tOkkk: $pr\n";
-		}else{
-		    echo "proxy:\t\t\tRuimm: $pr - removido da lista.\n";
-			
-			if (($key = array_search($pr, $proxy)) !== false) {
-			    unset($proxy[$key]);
+	if(count($proxy) > 0) {
+		$Curl = new Curl();
+		$Curl->setTimeout(5);
+		
+		foreach($proxy as $pr) {
+			if(!stristr($pr, ':')){
+				continue;
+			}else{
+				$Curl->add($url, null, null, $pr);
 			}
 		}
+
+		$resProxys = $Curl->run();
+		$totalpr = count($resProxys['info']);
+
+		for ($i = 0; $i <= $totalpr; $i++) {
+		    $info    = $resProxys['info'][$i];
+			$nproxy  = $info['primary_ip'].':'.$info['primary_port'];
+			if(strlen($nproxy) > 8){
+			    $headers = $resProxys['headers'][$i];
+			    $body    = $resProxys['body'][$i];
+			    if(stristr($body, '99;')){
+			    	echo "\n>Proxy: $nproxy - Online..\n";
+			    }else{
+			    	echo "\n>Proxy: $nproxy - off-line - deletado\n";
+
+					if (($key = array_search($nproxy, $proxy)) !== false) {
+					    unset($proxy[$key]);
+					}
+
+			    }
+			}
+		}
+
+		echo "\n------> Fim do teste de proxys. total: ".count($proxy);
+	}else{
+		echo "\n------> nada foi verificado: ".count($proxy);
 	}
 
-	echo "\n------> Fim do teste de proxys. total de proxys: ".count($proxy);
-
+	echo PHP_EOL;
     // $kmem     = round(memory_get_usage() / 1024);
     // $kmemReal = round(memory_get_usage(true) / 1024);
     
@@ -179,8 +201,6 @@ $loop->addPeriodicTimer(60.000, function () use (&$proxy, $url, &$update) {
 		}else{
 			echo "\nErro ao coletar nova rede....\t\t";
 		}
-
-
 	}else{
 		//echo "\nTa tudo na boa...........\n";
 		$update  = date("Y-m-d H:i:s");

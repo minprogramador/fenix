@@ -74,12 +74,16 @@ class Curl {
             usleep (250000);
         } while ($running > 0);
         for($i=0; $i < count($this->_handles); $i++) {
+
             $out = curl_multi_getcontent($this->_handles[$i]);
-            $out = explode("\n\r\n", $out);
-            $headers[$i] = $out[0];
-            $data[$i]    = $out[1];
+
+			$header_size = curl_getinfo($this->_handles[$i])['header_size'];
+			$header = substr($out, 0, $header_size);
+			$body   = substr($out, $header_size);
+
+            $headers[$i] = $header;
+            $data[$i]    = $body;
             $info[$i] = curl_getinfo($this->_handles[$i]);
-            //$data[$i] = json_decode($out);
             curl_multi_remove_handle($this->_mh, $this->_handles[$i]);
         }
         curl_multi_close($this->_mh);
