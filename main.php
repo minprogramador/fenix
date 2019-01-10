@@ -8,6 +8,7 @@ use \React\Socket\Server as ServerSock;
 use \React\Http\Response;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 require_once 'vendor/autoload.php';
+require('Curl.php');
 
 require('functions.php');
 
@@ -168,7 +169,7 @@ $loop->addPeriodicTimer(60.000, function () use (&$proxy, $url, &$update) {
 		echo "\nBuscar novos proxys...\n";
 		$url  = base64_decode(base64_decode($url));
 		$url  = explode('?', $url);
-		$url  = $url[0];		
+		$url  = $url[0];
 
 		$novoproxy = getRemoteProxy($url);
 		if(stristr($novoproxy, ':')){
