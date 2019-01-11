@@ -13,9 +13,8 @@ use \React\Http\Response;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 require_once 'vendor/autoload.php';
 require('Curl.php');
-
 require('functions.php');
-include("Telegram.php");
+require("Telegram.php");
 
 
 // define('A_USER_CHAT_ID', '427583453');
@@ -124,11 +123,11 @@ $server->get('/config', function (Request $request, callable $next) use (&$statu
     return new Response(200, array('Content-Type' => "application/json" ), $body);
 });
 
-$server->get('/logs', function (Request $request, callable $next) {
-	$logs = file_get_contents('logs.txt');
+// $server->get('/logs', function (Request $request, callable $next) {
+// 	$logs = file_get_contents('logs.txt');
 
-    return new Response(200, array('Content-Type' => "text/plain" ), $logs);
-});
+//     return new Response(200, array('Content-Type' => "text/plain" ), $logs);
+// });
 
 
 // $server->post('/config/:status', function (Request $request, callable $next) use (&$status) {

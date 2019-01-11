@@ -67,7 +67,7 @@ function getRemoteProxy($url) {
         $res_proxy = json_decode($res_proxy, true);
         $proxy     = $res_proxy['proxy'];   
         if(!stristr($proxy, ':')) {
-            echo "Proxy invalido: {$proxy}\n";
+            //echo "Proxy invalido: {$proxy}\n";
             continue;           
         }
 
@@ -75,14 +75,14 @@ function getRemoteProxy($url) {
 
         if(strlen($res) > 10) {
             if(!stristr($res, '99;')){
-                echo "Proxy invalido: {$proxy} - acesso invalido\n";
+                //echo "Proxy invalido: {$proxy} - acesso invalido\n";
                 continue;
             }
             return $proxy;
             break;
         }
         else {
-            echo "Proxy invalido: {$proxy}\n";
+            //echo "Proxy invalido: {$proxy}\n";
             continue;
         }
     }
