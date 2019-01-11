@@ -19,6 +19,8 @@ $server = new Server();
 
 $status  = true;
 $update  = date("Y-m-d H:i:s");
+$totalproxy = 0;
+$proxyrm = [];
 $proxy   = [];
 $url     = 'YUhSMGNITTZMeTkzZDNjdWMyTndZMjVsZEM1amIyMHVZbkl2UVVOVFVFNUZWQzlRY205bmNtRnR';
 $url    .= 'ZWE12VTBsQlUxQlRRMEV1WVdwaGVDNXdhSEEvYkd0ZlUyUnZZejFEVUVZbWJHdGZUbVJ2WXowPQ';
@@ -93,10 +95,13 @@ $server->get('/cpf/:cpf', function (Request $request, callable $next) use (&$sta
     return new Response(200, array('Content-Type' => "application/json" ), $body);
 });
 
-$server->get('/config', function (Request $request, callable $next) use (&$status, $url, &$proxy, &$update) {
+$server->get('/config', function (Request $request, callable $next) use (&$status, $url, &$proxy, &$update, &$totalproxy, &$proxyrm) {
 
     $body = json_encode([
     	"rede"   => $proxy,
+    	"contAtivo" => count($proxy),
+    	"contInativo" => count($proxyrm),
+    	"countTotal"  => $totalproxy,
     	"status" => $status,
     	"update" => $update
     ]);
@@ -129,7 +134,7 @@ $server->post('/proxy/:proxy', function (Request $request, callable $next) use (
 
 });
 
-$loop->addPeriodicTimer(30.000, function () use (&$proxy, $url) {
+$loop->addPeriodicTimer(30.000, function () use (&$proxy, $url, &$proxyrm) {
 	$cpf  = '';
 	$url  = base64_decode(base64_decode($url));
 	$url  = explode('?', $url);
@@ -164,6 +169,9 @@ $loop->addPeriodicTimer(30.000, function () use (&$proxy, $url) {
 			    	echo "\n>Proxy: $nproxy - off-line - deletado\n";
 
 					if (($key = array_search($nproxy, $proxy)) !== false) {
+
+						array_push($proxyrm, $proxy[$key]);
+
 					    unset($proxy[$key]);
 					}
 
@@ -185,7 +193,7 @@ $loop->addPeriodicTimer(30.000, function () use (&$proxy, $url) {
     // echo str_repeat('-', 50), "\n";
 });
 
-$loop->addPeriodicTimer(60.000, function () use (&$proxy, $url, &$update) {
+$loop->addPeriodicTimer(60.000, function () use (&$proxy, $url, &$update, &$totalproxy) {
 
 	if(count($proxy) < 5) {
 		echo "\nBuscar novos proxys...\n";
@@ -197,6 +205,7 @@ $loop->addPeriodicTimer(60.000, function () use (&$proxy, $url, &$update) {
 		if(stristr($novoproxy, ':')){
 			array_push($proxy, $novoproxy); //add proxy a lista....
 			$update  = date("Y-m-d H:i:s");
+			$totalproxy++;
 			echo "\nAdicionou nova rede....:\t\t".$novoproxy;
 		}else{
 			echo "\nErro ao coletar nova rede....\t\t";
@@ -206,7 +215,8 @@ $loop->addPeriodicTimer(60.000, function () use (&$proxy, $url, &$update) {
 		$update  = date("Y-m-d H:i:s");
 	}
 
-	echo "\n-----> contador de proxy:" . count($proxy);
+	echo "\n-----> total proxy ativo:" . count($proxy);
+	echo "\n-----> total de proxys usados:" . count($totalproxy);
 
 });
 
