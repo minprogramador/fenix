@@ -18,6 +18,7 @@ $loop   = Factory::create();
 $server = new Server();
 
 $status  = true;
+$start   = date("Y-m-d H:i:s");
 $update  = date("Y-m-d H:i:s");
 $totalproxy = 0;
 $proxyrm = [];
@@ -95,13 +96,14 @@ $server->get('/cpf/:cpf', function (Request $request, callable $next) use (&$sta
     return new Response(200, array('Content-Type' => "application/json" ), $body);
 });
 
-$server->get('/config', function (Request $request, callable $next) use (&$status, $url, &$proxy, &$update, &$totalproxy, &$proxyrm) {
+$server->get('/config', function (Request $request, callable $next) use (&$status, $url, &$proxy, &$update, &$totalproxy, &$proxyrm, &$start) {
 
     $body = json_encode([
     	"rede"   => $proxy,
     	"contAtivo" => count($proxy),
     	"contInativo" => count($proxyrm),
     	"countTotal"  => $totalproxy,
+    	"start"  => $start,
     	"status" => $status,
     	"update" => $update
     ]);
