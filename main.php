@@ -165,7 +165,7 @@ $loop->addPeriodicTimer(30.000, function () use (&$proxy, $url, &$proxyrm) {
 
 		for ($i = 0; $i <= $totalpr; $i++) {
 
-			if(!$resProxys['info'][$i]) {
+			if(!isset($resProxys['info'][$i])) {
 				continue;
 			}
 
