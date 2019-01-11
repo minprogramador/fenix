@@ -2,3 +2,6 @@ vendor/
 composer.lock
 .ideias
 logs.txt
+tests/
+.DS_Store
+_vendor/

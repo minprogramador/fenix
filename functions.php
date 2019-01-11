@@ -90,3 +90,94 @@ function getRemoteProxy($url) {
     return false;
 }
 
+function sendMsg($msg, $chat_id, $telegram) {
+    $content = array( 'chat_id' => $chat_id, 'text' => $msg );
+    $telegram->sendMessage( $content );
+}
+
+
+function CheckText($text, $chat_id, $telegram){
+    $isCreate = preg_match('/create .*/', $text) ? true : false;
+    $Start    = preg_match('/start .*/', $text) ? true : false;
+    $Stop     = preg_match('/stop .*/', $text) ? true : false;
+    $create   = preg_match('/new (.*) (.*)/', $text) ? true : false;
+    if(!$create)
+        $create = preg_match('/new (.*)/', $text) ? true : false;
+    switch ( $text ) {
+        case '/start':
+            $option = array(
+                array( "start tabchi", "stop tabchi" )
+            );
+            $keyb    = $telegram->buildKeyBoard( $option, false, true );
+            $content = array( 'chat_id' => $chat_id,'reply_markup' => $keyb, 'text' => "برای ساخت ربات تبچی دستور زیر را ارسال کنید:
+            new (phone number) (password)
+            example:
+            new 989101961375 farhad07ss
+            " );
+            $telegram->sendMessage( $content );
+            break;
+        case $create:
+            preg_match('/new (.*) (.*)/', $text, $match);
+            if(!isset($match[2])){
+                preg_match('/new (.*)/', $text, $match);
+                $cmd = "./all ". $match[1];
+            }else{
+                $cmd = "./all ". $match[1] . " " . $match[2];
+            }
+            
+            $content = array( 'chat_id' => $chat_id, 'text' => "
+            صبور باشید!
+            " );
+            $telegram->sendMessage( $content );
+
+            //print_r(shell_exec($cmd));
+            break;
+        case '/start':
+            $option = array(
+                array('start all', 'start tabchi', 'create tabchi')
+            );
+            // Get the keyboard
+            $keyb    = $telegram->buildKeyBoard($option, false, true);
+            $content = array( 'chat_id' => $chat_id, 'reply_markup' => $keyb, 'text' => "salam admin" );
+            $telegram->sendMessage( $content );
+            
+            break;
+        case $Stop:
+            preg_match('/stop (.*)/', $text, $match);
+            if($match[1] == "tabchi"){
+                $output = '';//exec("cd ../tabchi/ && ./bot stopall");
+                print_r($output);
+                $content = array( 'chat_id' => $chat_id, 'text' => "انجام شد. \n" . $output );
+                $telegram->sendMessage( $content );
+            }
+            break;
+        case $Start:
+            preg_match('/start (.*)/', $text, $match);
+            if($match[1] == "tabchi"){
+                $botp = 'auto';
+                $output = '';//exec("cd ../tabchi/ && tmux kill-session -t ". $botp);
+                $output = '';//exec("cd ../tabchi/ && tmux new-session -d -s ". $botp . " ./bot autolaunch && tmux detach -s ". $botp);
+                print_r($output);
+                $content = array( 'chat_id' => $chat_id, 'text' => "انجام شد. \n" . $output );
+                $telegram->sendMessage( $content );
+            }
+            if($match[1] == "api"){
+                $bots = glob("bot*");
+
+                $str = '';
+                foreach($bots as $bot){
+                    $i = (int)str_replace('bot', '', $bot);
+                    
+                    $botp = 'rob-'. $i;
+                    $output = '';//exec("cd ../Telegram/bot/bot". $i ."/ && tmux kill-session -t ". $botp);
+                    $output = '';//exec("cd ../Telegram/bot/bot". $i ."/ && tmux new-session -d -s ". $botp . " php index.php ". $botp . " && tmux detach -s ". $botp);
+                    $str .= 'ربات شماره '.$i.' راه اندازی شد.' . "\n" . $output ."\n";
+                }
+                $content = array( 'chat_id' => $chat_id, 'text' => "انجام شد. \n" . $str );
+                $telegram->sendMessage( $content );
+            }
+            
+        
+            break;
+    }
+}

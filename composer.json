@@ -1,6 +1,18 @@
 {
     "require": {
         "legionth/http-rest": "^0.2",
-        "react/http-client": "^0.5.9"
+        "react/http-client": "^0.5.9",
+        "react/event-loop": "~0.4"
+    },
+    "authors": [
+        {
+            "name": "minprogramador",
+            "email": "minprogramador@gmail.com"
+        }
+    ],
+	"autoload": {
+      "psr-4": {
+        "TelegramBot\\": "src/"
+      }
     }
 }

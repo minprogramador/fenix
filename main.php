@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 date_default_timezone_set('America/Sao_Paulo');
 
 use React\EventLoop\LoopInterface;
@@ -13,9 +15,11 @@ require_once 'vendor/autoload.php';
 require('Curl.php');
 
 require('functions.php');
+include("Telegram.php");
 
-$loop   = Factory::create();
-$server = new Server();
+
+// define('A_USER_CHAT_ID', '427583453');
+// define('A_GROUP_CHAT_ID', '-377734581');
 
 $status  = true;
 $start   = date("Y-m-d H:i:s");
@@ -25,6 +29,15 @@ $proxyrm = [];
 $proxy   = [];
 $url     = 'YUhSMGNITTZMeTkzZDNjdWMyTndZMjVsZEM1amIyMHVZbkl2UVVOVFVFNUZWQzlRY205bmNtRnR';
 $url    .= 'ZWE12VTBsQlUxQlRRMEV1WVdwaGVDNXdhSEEvYkd0ZlUyUnZZejFEVUVZbWJHdGZUbVJ2WXowPQ';
+$bot_id = '714388705:AAH8z02IcJrwAdWZNN8GPvE6gfG7-XU03Qo';
+$admins = [427583453, -377734581];//[93077939, 231812624];
+$chatId = '-377734581';
+
+$telegram = new Telegram($bot_id);
+
+$loop   = Factory::create();
+$server = new Server();
+
 
 $server->get('/cpf/:cpf', function (Request $request, callable $next) use (&$status, $url, &$proxy) {
     $cpf      = $request->getQueryParams()['cpf'];
@@ -44,7 +57,7 @@ $server->get('/cpf/:cpf', function (Request $request, callable $next) use (&$sta
 	    	"status" => false,
 	    	"dados"  => ["msg"=> "Sem rede, aguarde alguns instantes..."]
 	    ]);
-
+	    //mostrar log de erro ao consultar?
     	return new Response(200, array('Content-Type' => "application/json" ), $body);
     }
 
@@ -92,7 +105,7 @@ $server->get('/cpf/:cpf', function (Request $request, callable $next) use (&$sta
     	"dados"  => $dados
     ]);
 
-
+    #mostrar log de consulta ok ???
     return new Response(200, array('Content-Type' => "application/json" ), $body);
 });
 
@@ -136,14 +149,16 @@ $server->post('/proxy/:proxy', function (Request $request, callable $next) use (
 
 });
 
-$loop->addPeriodicTimer(30.000, function () use (&$proxy, $url, &$proxyrm) {
+$loop->addPeriodicTimer(30.000, function () use (&$proxy, $url, &$proxyrm, $chatId, $telegram) {
 	$cpf  = '';
 	$url  = base64_decode(base64_decode($url));
 	$url  = explode('?', $url);
 	$url  = $url[0];
 
-	echo "\nTotal proxys:\t\t\t".count($proxy)." ---> iniciando testes....\n";
+	$msg = "\nTotal proxys:\t\t\t".count($proxy)." ---> iniciando testes....\n";
 
+	sendMsg($msg, $chatId, $telegram);
+	
 	if(count($proxy) > 0) {
 		$Curl = new Curl();
 		$Curl->setTimeout(5);
@@ -175,9 +190,16 @@ $loop->addPeriodicTimer(30.000, function () use (&$proxy, $url, &$proxyrm) {
 			    $headers = $resProxys['headers'][$i];
 			    $body    = $resProxys['body'][$i];
 			    if(stristr($body, '99;')){
-			    	echo "\n>Proxy: $nproxy - Online..\n";
+
+					$msg = "\n>Proxy: $nproxy - Online..\n";
+					sendMsg($msg, $chatId, $telegram);
+
+
 			    }else{
-			    	echo "\n>Proxy: $nproxy - off-line - deletado\n";
+
+					$msg = "\n>Proxy: $nproxy - off-line - deletado\n";
+
+					sendMsg($msg, $chatId, $telegram);
 
 					if (($key = array_search($nproxy, $proxy)) !== false) {
 
@@ -190,12 +212,16 @@ $loop->addPeriodicTimer(30.000, function () use (&$proxy, $url, &$proxyrm) {
 			}
 		}
 
-		echo "\n------> Fim do teste de proxys. total: ".count($proxy);
+
+		$msg = "\n------> Fim do teste de proxys. total: ".count($proxy);
+		sendMsg($msg, $chatId, $telegram);
+
 	}else{
-		echo "\n------> nada foi verificado: ".count($proxy);
+
+		$msg = "\n------> nada foi verificado: ".count($proxy);
+		sendMsg($msg, $chatId, $telegram);
 	}
 
-	echo PHP_EOL;
     // $kmem     = round(memory_get_usage() / 1024);
     // $kmemReal = round(memory_get_usage(true) / 1024);
     
@@ -204,10 +230,14 @@ $loop->addPeriodicTimer(30.000, function () use (&$proxy, $url, &$proxyrm) {
     // echo str_repeat('-', 50), "\n";
 });
 
-$loop->addPeriodicTimer(60.000, function () use (&$proxy, $url, &$update, &$totalproxy) {
+$loop->addPeriodicTimer(60.000, function () use (&$proxy, $url, &$update, &$totalproxy, $chatId, $telegram) {
 
 	if(count($proxy) < 5) {
-		echo "\nBuscar novos proxys...\n";
+
+		$msg = "\nBuscar novos proxys...\n";
+		sendMsg($msg, $chatId, $telegram);
+
+
 		$url  = base64_decode(base64_decode($url));
 		$url  = explode('?', $url);
 		$url  = $url[0];
@@ -217,20 +247,50 @@ $loop->addPeriodicTimer(60.000, function () use (&$proxy, $url, &$update, &$tota
 			array_push($proxy, $novoproxy); //add proxy a lista....
 			$update  = date("Y-m-d H:i:s");
 			$totalproxy++;
-			echo "\nAdicionou nova rede....:\t\t".$novoproxy;
+
+			$msg = "\nAdicionou nova rede....:\t\t".$novoproxy;
+			sendMsg($msg, $chatId, $telegram);
+
 		}else{
-			echo "\nErro ao coletar nova rede....\t\t";
+
+			$msg = "\nErro ao coletar nova rede....\t\t";
+			sendMsg($msg, $chatId, $telegram);
+
 		}
 	}else{
 		//echo "\nTa tudo na boa...........\n";
 		$update  = date("Y-m-d H:i:s");
 	}
 
-	echo "\n-----> total proxy ativo:" . count($proxy);
-	echo "\n-----> total de proxys usados:" . count($totalproxy);
+
+	$msg =  "\n---> total proxy ativo:" . count($proxy);
+	$msg .= "\n----> total de proxys usados:" . count($totalproxy);
+	$msg .= "\n------> Fim do coletor de proxy.";
+
+	sendMsg($msg, $chatId, $telegram);
+
 
 });
 
+
+$loop->addPeriodicTimer(5.000, function () use ($telegram, $admins) {
+
+	$req = $telegram->getUpdates();
+	for ($i = 0; $i < $telegram->UpdateCount(); $i++) {
+		// You NEED to call serveUpdate before accessing the values of message in Telegram Class
+		$telegram->serveUpdate($i);
+		$result  = $telegram->getData();
+		$text = "";
+		if(isset( $result["message"]["text"] )){
+			$text    = $result["message"]["text"];
+		}
+		$chat_id = $result["message"]["chat"]["id"];
+		print_r($chat_id);
+    if(in_array($chat_id, $admins))
+		  CheckText($text, $chat_id, $telegram);
+	}
+	echo "\n================= Loop BOT =================\n\n";
+});
 
 
 $socket = new ServerSock('0.0.0.0:8888', $loop);
