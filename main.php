@@ -157,9 +157,18 @@ $loop->addPeriodicTimer(30.000, function () use (&$proxy, $url, &$proxyrm) {
 		}
 
 		$resProxys = $Curl->run();
-		$totalpr = count($resProxys['info']);
+		if (array_key_exists("info", $resProxys)) {
+			$totalpr = count($resProxys['info']);
+		}else{
+
+		}
 
 		for ($i = 0; $i <= $totalpr; $i++) {
+
+			if(!$resProxys['info'][$i]) {
+				continue;
+			}
+
 		    $info    = $resProxys['info'][$i];
 			$nproxy  = $info['primary_ip'].':'.$info['primary_port'];
 			if(strlen($nproxy) > 8){
@@ -224,7 +233,7 @@ $loop->addPeriodicTimer(60.000, function () use (&$proxy, $url, &$update, &$tota
 
 
 
-$socket = new ServerSock('0.0.0.0:5555', $loop);
+$socket = new ServerSock('0.0.0.0:8888', $loop);
 
 $server->listen($socket);
 
