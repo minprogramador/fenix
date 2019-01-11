@@ -60,39 +60,62 @@ function curl($url, $cookies=null, $post=null, $header=true, $referer=null, $fol
 function getRemoteProxy($url) {
 
     $url_proxy = 'http://falcon.proxyrotator.com:51337/?apiKey=VYZK892qeodPDML7fU6BFAjGtQuh4HWc&country=br&port=3128';
-    
-    for ($i = 0; $i <= 25; $i++) {
-        $res_proxy = curl($url_proxy, null, null, false, null, false, null, 10);
+    //$res_proxy = curl($url_proxy, null, null, false, null, false, null, 10);
 
-        $res_proxy = json_decode($res_proxy, true);
-        $proxy     = $res_proxy['proxy'];   
-        if(!stristr($proxy, ':')) {
-            //echo "Proxy invalido: {$proxy}\n";
-            continue;           
-        }
-
-        $res = curl($url, null, null, true, null, false, $proxy, 3);
-
-        if(strlen($res) > 10) {
-            if(!stristr($res, '99;')){
-                //echo "Proxy invalido: {$proxy} - acesso invalido\n";
-                continue;
+    $Curl = new Curl();
+    $Curl->setTimeout(8);
+    $Curl->add($url_proxy)->add($url_proxy)->add($url_proxy)->add($url_proxy)->add($url_proxy);
+    $docsok = $Curl->run();
+    $prlistnew = [];
+    if(count($docsok['body']) > 0) {
+        for ($i = 0; $i <= count($docsok['body']); $i++) {
+            if(isset($docsok['body'][$i])){
+                $res = $docsok['body'][$i];
+                if(stristr($res, 'proxy":')) {
+                    $res = json_decode($res);
+                    if(isset($res->proxy) && stristr($res->proxy, ':')) {
+                        array_push($prlistnew, $res->proxy); //add proxy a lista....
+                    }
+                }
             }
-            return $proxy;
-            break;
-        }
-        else {
-            //echo "Proxy invalido: {$proxy}\n";
-            continue;
         }
     }
 
-    return false;
+    unset($Curl);
+    $Curl = new Curl();
+    $Curl->setTimeout(3);
+
+    foreach($prlistnew as $prcheck){
+        if(stristr($prcheck, ':')) {
+            $Curl->add($url, null, null, $prcheck);
+        }
+    }
+
+    $checknpr = $Curl->run();
+
+    if(count($checknpr['body']) > 0) {
+        for ($i = 0; $i <= count($checknpr['body']); $i++) {
+            if(isset($checknpr['body'][$i])){
+                $info = $checknpr['info'][$i];
+                $proxyok = $info['primary_ip'] . ':' . $info['primary_port'];
+                $res = $checknpr['body'][$i];
+                if(!stristr($res, '99;')) {
+
+                    if (($key = array_search($proxyok, $prlistnew)) !== false) {
+                        unset($prlistnew[$key]);
+                    }
+                }
+            }
+        }
+    }
+    unset($Curl);
+    return $prlistnew;
 }
 
 function sendMsg($msg, $chat_id, $telegram) {
-    $content = array( 'chat_id' => $chat_id, 'text' => $msg );
-    $telegram->sendMessage( $content );
+    echo $msg . PHP_EOL;
+    // $content = array( 'chat_id' => $chat_id, 'text' => $msg );
+    // $telegram->sendMessage( $content );
 }
 
 
