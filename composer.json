@@ -2,7 +2,8 @@
     "require": {
         "legionth/http-rest": "^0.2",
         "react/http-client": "^0.5.9",
-        "react/event-loop": "~0.4"
+        "react/event-loop": "^0.4",
+        "khr/react-curl": "^2.0"
     },
     "authors": [
         {
