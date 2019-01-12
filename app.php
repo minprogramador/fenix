@@ -84,7 +84,7 @@ function findProxy($interval=1.0, $timer, $curl, &$proxy, LoopInterface $loop) {
 				$res = json_decode($result);
 				if(isset($res->proxy)){
 					if(strlen($res->proxy) > 5){
-						array_push($proxy, $res->proxy);
+						array_push($proxy, ['proxy'=>  $res->proxy, 'status'=> false, 'debug' => '', 'update' => date("d/m/Y H:i:s")]);
 					}
 				}
 			}, function(Exception $e) {
@@ -110,29 +110,53 @@ $verTotalProxy = $loop->addPeriodicTimer(2.0, function ($timer) use ($curl, $loo
 });
 
 
-$testAllProxy = $loop->addPeriodicTimer(5.0, function ($timer) use ($url, $curl, $loop, &$proxy, $findProxy) {
+function searcharray($value, $key, $array) {
+   foreach ($array as $k => $val) {
+       if ($val[$key] == $value) {
+           return $k;
+       }
+   }
+   return null;
+}
+
+$testAllProxy = $loop->addPeriodicTimer(5.0, function ($timer) use ($url, $curl, $loop, &$proxy, &$proxyof, $findProxy) {
 
 	if(count($proxy) > 0){
 		
 		$urltest = 	base64_decode(base64_decode($url));
 		$urltest = explode('?', $urltest)[0];
 		foreach($proxy as $ipport){
+			$ipport = $ipport['proxy'];
+
 			if(!stristr($ipport, ':')){
 				continue;
 			}else{
 
 				testProxy(
 					$urltest, $ipport, 3,
-					function(MCurl\Result $result) use (&$proxy, $ipport){
+					function(MCurl\Result $result) use (&$proxy, $ipport, &$proxyof){
 						if(!stristr($result, '99;')){
-							if (($key = array_search($ipport, $proxy)) !== false) {
+
+							if (($key = searcharray($ipport, 'proxy', $proxy)) !== false) {
+								array_push($proxyof, ['proxy'=> $ipport, 'status'=> false, 'debug' => $result, 'update' => date("d/m/Y H:i:s")]);
 						    	unset($proxy[$key]);
 								echo "\n{$ipport} deletado da lista --------->";					    	
 							}
+						}else{
+							if (($key = searcharray($ipport, 'proxy', $proxy)) !== false) {
+								$proxy[$key]['status'] = true;
+								$proxy[$key]['debug'] = (string) $result;
+								$proxy[$key]['update'] = date("d/m/Y H:i:s");
+
+///								array_push($proxyof, ['proxy'=> $ipport, 'status'=> true, 'debug' => (string) $result, 'update' => date("d/m/Y H:i:s")]);
+	//					    	unset($proxy[$key]);
+	//							echo "\n{$ipport} deletado da lista --------->";	
+							}
 						}
 					},
-					function(Exception $e) use(&$proxy, $ipport) {
-						if (($key = array_search($ipport, $proxy)) !== false) {
+					function(Exception $e) use(&$proxy, $ipport, &$proxyof) {
+						if (($key = searcharray($ipport, 'proxy', $proxy)) !== false) {
+							array_push($proxyof, ['proxy'=> $ipport, 'status'=> false, 'debug' => $e->getMessage(), 'update' => date("d/m/Y H:i:s")]);
 							unset($proxy[$key]);
 							echo "\n{$ipport} deletado da lista --------->";
 						}
@@ -149,10 +173,11 @@ $testAllProxy = $loop->addPeriodicTimer(5.0, function ($timer) use ($url, $curl,
 
 });
 
-$server->get('/config', function (Request $request, callable $next) use (&$status, $url, &$proxy, &$update) {
+$server->get('/config', function (Request $request, callable $next) use (&$status, $url, &$proxy, &$proxyof, &$update) {
 
     $body = json_encode([
-    	"rede"   => $proxy,
+    	"redeOn"   => $proxy,
+    	"redeOff"   => $proxyof,
     	"status" => $status,
     	"update" => $update
     ]);
