@@ -211,6 +211,10 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 
 		$urltest = $url;
 		foreach($proxy as $ipport){
+			if(!isset($ipport['proxy'])){
+				continue;
+			}
+			
 			$ipport = $ipport['proxy'];
 
 			if(!stristr($ipport, ':')){
@@ -247,7 +251,12 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 								$proxy[$key]['debug'] = (string) $result;
 								$proxy[$key]['timeout'] = $result->info['total_time'];
 								$proxy[$key]['update'] = date("Y-m-d H:i:s");
-								$proxy[$key]['lifetime'] = diffHoras($proxy[$key]['start'], date("Y-m-d H:i:s"));
+								if(isset($proxy[$key]['start'])){
+									$lifetime = diffHoras($proxy[$key]['start'], date("Y-m-d H:i:s"));
+								}else{
+									$lifetime = 0;
+								}
+								$proxy[$key]['lifetime'] = $lifetime;
 								$update =  date("Y-m-d H:i:s");
 							}
 						}
