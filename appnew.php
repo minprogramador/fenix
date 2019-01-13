@@ -14,6 +14,10 @@ use \KHR\React\Curl\Exception;
 date_default_timezone_set('America/Sao_Paulo');
 require_once 'vendor/autoload.php';
 
+
+//https://github.com/mesour/ArrayManager
+
+
 require('functions.php');
 
 $loop   = Factory::create();
@@ -90,7 +94,7 @@ function getProxy($getApiProxy, $qnt=2, $timeout=1, $cb_ok, $cb_err, $curl, Loop
 function testProxy($url, $ipport, $timeout=3, $cb_ok, $cb_err, $curl, LoopInterface $loop) {
 	echo "-----> entrou na 53, test proxy... " . PHP_EOL;
 
-	for ($x = 0; $x <= $qnt; $x++) {
+	for ($x = 0; $x <= 1; $x++) {
 		$payload = [
 			CURLOPT_URL => $url,
 			CURLOPT_AUTOREFERER => true,
@@ -118,7 +122,7 @@ function findProxy($interval=1.0, $timer, $curl, &$proxy, $getApiProxy, $url, &$
 		}
 
 		getProxy($getApiProxy(), 2, 5,
-			function(MCurl\Result $result) use (&$proxy, &$proxy_cont, &$update){
+			function(MCurl\Result $result) use (&$proxy, &$proxy_cont, &$update, &$url){
 				$res = json_decode($result);
 				if(isset($res->proxy)){
 					if(strlen($res->proxy) > 5){
@@ -144,11 +148,12 @@ function findProxy($interval=1.0, $timer, $curl, &$proxy, $getApiProxy, $url, &$
 	});
 }
 
-$verTotalProxy = $loop->addPeriodicTimer($timeTotProxy, function ($timer) use (&$url, $curl, $loop, &$proxy, $findProxy, $getApiProxy, &$proxy_max, &$proxy_cont, &$update) {
+$verTotalProxy = $loop->addPeriodicTimer($timeTotProxy, function ($timer) use (&$url, $curl, $loop, &$proxy, $getApiProxy, &$proxy_max, &$proxy_cont, &$update) {
 	echo "----> ver total proxys:> ".count($proxy)." ---\n";
 
 	if(count($proxy) < 5) {
 		if($proxy_max > $proxy_cont){
+			// findProxy($interval=1.0, $timer, $curl, &$proxy, $getApiProxy, $url, &$proxy_cont, &$update, LoopInterface $loop)
 			findProxy(1.0, $timer, $curl, $proxy, $getApiProxy, $url, $proxy_cont, $update, $loop);
 			echo ">>>pouco proxy, buscar mais...\n";			
 		}else{
@@ -180,7 +185,7 @@ function searcharray($value, $key, $array) {
    return null;
 }
 
-$testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$url, &$urlstr, $curl, $loop, &$proxy, &$proxyof, $findProxy, &$update) {
+$testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$url, &$urlstr, $curl, $loop, &$proxy, &$proxyof, &$update) {
 
 	if(count($proxy) > 0){
 
@@ -245,7 +250,7 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 					function(Exception $e) use(&$proxy, $ipport, &$proxyof, &$url) {
 						if (($key = searcharray($ipport, 'proxy', $proxy)) !== false) {
 
-
+							if(isset($proxy[$key]['start'])){
 							$prpayl = [
 									'proxy'  => $ipport,
 									'status'  => false,
@@ -261,6 +266,7 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 							unset($proxy[$key]);
 							echo "\n{$ipport} deletado da lista --------->";
 							$update =  date("d/m/Y H:i:s");
+							}
 						}
 						echo $e->result->info['url'], "\t", $e->getMessage(), " --- Fim.....", PHP_EOL;
 				  		//echo $e->result->info['url'] . ' - Fim..' . PHP_EOL;
@@ -354,7 +360,7 @@ $server->get('/config', function (Request $request, callable $next) use (&$statu
     return new Response(200, array('Content-Type' => "application/json" ), $body);
 });
 
-$socket = new ServerSock('0.0.0.0:3333', $loop);
+$socket = new ServerSock('0.0.0.0:5555', $loop);
 
 $server->listen($socket);
 
