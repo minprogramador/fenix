@@ -28,7 +28,7 @@ $proxy_max  = 20;
 $proxy_cont = 0;
 
 $status  = true;
-$start   = date("Y-m-d H:i:s"); 
+$start   = date("Y-m-d H:i:s");
 $update  = date("Y-m-d H:i:s");
 $proxy   = [];
 $proxyof = [];
@@ -55,25 +55,30 @@ $getApiProxy = function($ver=true) {
 
 
 function diffHoras($start, $end){
-	if(stristr($start, '/')){
-		$start = str_replace('/', '-', $start);
+
+	$start = new DateTime($start);
+	$end = new DateTime($end);
+
+	$start->format('Y-m-d H:i:s');
+	$end->format('Y-m-d H:i:s');
+
+
+	$interval = $end->diff($start);
+
+	$days = $interval->d;
+	if ($days > 0) {
+	    return $interval->format("%a %hh %im %ss");
+	} else {
+	    return $interval->format("%hh %im %ss");
 	}
-	if(stristr($end, '/')){
-		$end = str_replace('/', '-', $end);
-	}
 
-	$datatime1 = new DateTime($start);
-	$datatime2 = new DateTime($end);
-
-	$data1  = $datatime1->format('Y-m-d H:i:s');
-	$data2  = $datatime2->format('Y-m-d H:i:s');
-
-	$diff = $datatime1->diff($datatime2);
-	return $diff->s . 's';
+	// $diff = $datatime1->diff($datatime2);
+	// return $diff->s . 's';
 	//$horas = $diff->s + ($diff->days * 24);
 	//return $horas;
 }
-
+//echo diffHoras(date("Y-m-d H:i:s"), date("Y-m-d H:i:s"));
+//die;
 function getProxy($getApiProxy, $qnt=2, $timeout=1, $cb_ok, $cb_err, $curl, LoopInterface $loop){
 	echo "entrou na 67, coleta de proxy" . PHP_EOL;
 	$api_proxy = $getApiProxy;
@@ -133,8 +138,8 @@ function findProxy($interval=1.0, $timer, $curl, &$proxy, $getApiProxy, $url, &$
 									'status'=> false,
 									'url' => $url,
 									'debug' => false,
-									'start' => date("d/m/Y H:i:s"),
-									'update' => date("d/m/Y H:i:s"),
+									'start' => date("Y-m-d H:i:s"),
+									'update' => date("Y-m-d H:i:s"),
 									'lifetime'=> 0,
 									'timeout'=> ''
 						];
@@ -192,7 +197,7 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 		$rand_keys = array_rand($proxy, 1);
 		$redeok = $proxy[$rand_keys];
 		if(is_array($redeok)){
-			$lifetime = diffHoras($redeok['start'], date("d/m/Y H:i:s"));
+			$lifetime = diffHoras($redeok['start'], date("Y-m-d H:i:s"));
 			unset($redeok['debug']);
 		}else{
 			echo "\n\n\n\n ======================== rede ok nao eh array =========================== \n\n\n\n";
@@ -224,14 +229,14 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 										'status'  => false,
 										'url' 	  => $url,
 										'debug'   => $result,
-										'start'   => date("d/m/Y H:i:s"),
-										'update'  => date("d/m/Y H:i:s"),
+										'start'   => date("Y-m-d H:i:s"),
+										'update'  => date("Y-m-d H:i:s"),
 										'lifetime'=> 0,
 										'timeout' => $result->info['total_time']
 								];
 								array_push($proxyof, $prpayl);
 						    	unset($proxy[$key]);
-						    	$update =  date("d/m/Y H:i:s");
+						    	$update =  date("Y-m-d H:i:s");
 								echo "\n{$ipport} deletado da lista --------->";					    	
 							}
 						}else{
@@ -241,9 +246,9 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 								$proxy[$key]['status'] = true;
 								$proxy[$key]['debug'] = (string) $result;
 								$proxy[$key]['timeout'] = $result->info['total_time'];
-								$proxy[$key]['update'] = date("d/m/Y H:i:s");
-								$proxy[$key]['lifetime'] = diffHoras($proxy[$key]['start'], date("d/m/Y H:i:s"));
-								$update =  date("d/m/Y H:i:s");
+								$proxy[$key]['update'] = date("Y-m-d H:i:s");
+								$proxy[$key]['lifetime'] = diffHoras($proxy[$key]['start'], date("Y-m-d H:i:s"));
+								$update =  date("Y-m-d H:i:s");
 							}
 						}
 					},
@@ -257,15 +262,15 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 									'url' 	  => $url,
 									'debug'   => $e->getMessage(),
 									'start'   => $proxy[$key]['start'],
-									'update'  => date("d/m/Y H:i:s"),
-									'lifetime'=> diffHoras($proxy[$key]['start'], date("d/m/Y H:i:s")),
+									'update'  => date("Y-m-d H:i:s"),
+									'lifetime'=> diffHoras($proxy[$key]['start'], date("Y-m-d H:i:s")),
 									'timeout' => ''
 							];
 							array_push($proxyof, $prpayl);
 
 							unset($proxy[$key]);
 							echo "\n{$ipport} deletado da lista --------->";
-							$update =  date("d/m/Y H:i:s");
+							$update =  date("Y-m-d H:i:s");
 							}
 						}
 						echo $e->result->info['url'], "\t", $e->getMessage(), " --- Fim.....", PHP_EOL;
@@ -318,7 +323,7 @@ $server->get('/proxy', function (Request $request, callable $next) use (&$status
 		$redeok = $proxy[$rand_keys];
 		if(is_array($redeok)){
 			if($redeok['status'] != false) {
-				$lifetime = diffHoras($redeok['start'], date("d/m/Y H:i:s"));
+				$lifetime = diffHoras($redeok['start'], date("Y-m-d H:i:s"));
 				unset($redeok['debug']);
 			}else{
 				$redeok = ['fazer loop ???????'];
