@@ -20,6 +20,7 @@ require("Telegram.php");
 // define('A_USER_CHAT_ID', '427583453');
 // define('A_GROUP_CHAT_ID', '-377734581');
 
+$emojiNum = ["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"];
 $status  = true;
 $start   = date("Y-m-d H:i:s");
 $update  = date("Y-m-d H:i:s");

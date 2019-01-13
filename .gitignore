@@ -5,3 +5,6 @@ logs.txt
 tests/
 .DS_Store
 _vendor/
+Telegram.bk.php
+run.sh
+telegrakeys.php
