@@ -24,7 +24,7 @@ $loop   = Factory::create();
 $server = new Server();
 $curl = new Curl($loop);
 
-$proxy_max  = 20;
+$proxy_max  = 200;
 $proxy_cont = 0;
 
 $status  = true;
@@ -36,7 +36,7 @@ $url 	 = 'https://www.scpcnet.com.br/';
 $urlstr  = 'SCPCNET';
 $timeTotProxy = 10.0;
 $timeAllProxy = 5.0;
-
+$maxProxyOn   = 10;
 $getApiProxy = function($ver=true) {
 
 	$api_pr_key = 'VYZK892qeodPDML7fU6BFAjGtQuh4HWc';
@@ -99,7 +99,7 @@ function getProxy($getApiProxy, $qnt=2, $timeout=1, $cb_ok, $cb_err, $curl, Loop
 function testProxy($url, $ipport, $timeout=3, $cb_ok, $cb_err, $curl, LoopInterface $loop) {
 	echo "-----> entrou na 53, test proxy... " . PHP_EOL;
 
-	for ($x = 0; $x <= 1; $x++) {
+//	for ($x = 0; $x <= 1; $x++) {
 		$payload = [
 			CURLOPT_URL => $url,
 			CURLOPT_AUTOREFERER => true,
@@ -109,7 +109,7 @@ function testProxy($url, $ipport, $timeout=3, $cb_ok, $cb_err, $curl, LoopInterf
 		];
 
 		$curl->add($payload)->then($cb_ok, $cb_err);
-	}
+//	}
 
 	$curl->run();
 }
@@ -153,10 +153,10 @@ function findProxy($interval=1.0, $timer, $curl, &$proxy, $getApiProxy, $url, &$
 	});
 }
 
-$verTotalProxy = $loop->addPeriodicTimer($timeTotProxy, function ($timer) use (&$url, $curl, $loop, &$proxy, $getApiProxy, &$proxy_max, &$proxy_cont, &$update) {
+$verTotalProxy = $loop->addPeriodicTimer($timeTotProxy, function ($timer) use (&$url, $curl, $loop, &$proxy, $getApiProxy, &$proxy_max, &$proxy_cont, &$update, &$maxProxyOn) {
 	echo "----> ver total proxys:> ".count($proxy)." ---\n";
 
-	if(count($proxy) < 5) {
+	if(count($proxy) < $maxProxyOn) {
 		if($proxy_max > $proxy_cont){
 			// findProxy($interval=1.0, $timer, $curl, &$proxy, $getApiProxy, $url, &$proxy_cont, &$update, LoopInterface $loop)
 			findProxy(1.0, $timer, $curl, $proxy, $getApiProxy, $url, $proxy_cont, $update, $loop);
@@ -214,7 +214,7 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 			if(!isset($ipport['proxy'])){
 				continue;
 			}
-			
+
 			$ipport = $ipport['proxy'];
 
 			if(!stristr($ipport, ':')){
@@ -363,7 +363,7 @@ $server->get('/proxy', function (Request $request, callable $next) use (&$status
 });
 
 
-$server->get('/config', function (Request $request, callable $next) use (&$status, &$url, &$urlstr, &$getApiProxy, &$proxy, &$proxyof, &$update, &$start, &$proxy_max, &$proxy_cont, &$timeAllProxy, &$timeTotProxy) {
+$server->get('/config', function (Request $request, callable $next) use (&$status, &$url, &$urlstr, &$getApiProxy, &$proxy, &$proxyof, &$update, &$start, &$proxy_max, &$proxy_cont, &$timeAllProxy, &$timeTotProxy, &$maxProxyOn) {
 
     $body = json_encode([
     	"redeOn"    => $proxy,
@@ -371,10 +371,11 @@ $server->get('/config', function (Request $request, callable $next) use (&$statu
     	"urlcheck"  => $url,
     	"checkstr"  => $urlstr,
     	"api_proxy" => $getApiProxy(false),
-    	"max_proxy" => $proxy_max,
-    	"max_cont"  => $proxy_cont,
     	"proxy_on"  => count($proxy),
     	"proxy_off" => count($proxyof),
+    	"max_proxy_on" => $maxProxyOn,
+    	"max_proxy_search" => $proxy_max,
+    	"max_proxy_cont"  => $proxy_cont,
     	"start"     => $start,
     	"update"    => $update,
     	"lifetime"  => diffHoras($start, date("Y-m-d H:i:s")),
