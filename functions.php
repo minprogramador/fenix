@@ -113,9 +113,9 @@ function getRemoteProxy($url) {
 }
 
 function sendMsg($msg, $chat_id, $telegram) {
-    echo $msg . PHP_EOL;
-    // $content = array( 'chat_id' => $chat_id, 'text' => $msg );
-    // $telegram->sendMessage( $content );
+    //echo $msg . PHP_EOL;
+     $content = array( 'chat_id' => $chat_id, 'text' => $msg );
+     $telegram->sendMessage( $content );
 }
 
 

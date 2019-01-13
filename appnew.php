@@ -16,17 +16,24 @@ require_once 'vendor/autoload.php';
 
 
 //https://github.com/mesour/ArrayManager
-
-
+require("Telegram.php");
 require('functions.php');
+
+$bot_id = '714388705:AAH8z02IcJrwAdWZNN8GPvE6gfG7-XU03Qo';
+$admins = [427583453];//, -377734581];//[93077939, 231812624];
+$chatId = '-1001342136473';//'-377734581';
+
+
+$telegram = new Telegram($bot_id);
+
 
 $loop   = Factory::create();
 $server = new Server();
 $curl = new Curl($loop);
 
+
 $proxy_max  = 200;
 $proxy_cont = 0;
-
 $status  = true;
 $start   = date("Y-m-d H:i:s");
 $update  = date("Y-m-d H:i:s");
@@ -37,6 +44,8 @@ $urlstr  = 'SCPCNET';
 $timeTotProxy = 10.0;
 $timeAllProxy = 5.0;
 $maxProxyOn   = 10;
+
+
 $getApiProxy = function($ver=true) {
 
 	$api_pr_key = 'VYZK892qeodPDML7fU6BFAjGtQuh4HWc';
@@ -80,7 +89,7 @@ function diffHoras($start, $end){
 //echo diffHoras(date("Y-m-d H:i:s"), date("Y-m-d H:i:s"));
 //die;
 function getProxy($getApiProxy, $qnt=2, $timeout=1, $cb_ok, $cb_err, $curl, LoopInterface $loop){
-	echo "entrou na 67, coleta de proxy" . PHP_EOL;
+	//echo "entrou na 67, coleta de proxy" . PHP_EOL;
 	$api_proxy = $getApiProxy;
 	for ($x = 0; $x <= $qnt; $x++) {
 		$payload = [
@@ -97,7 +106,7 @@ function getProxy($getApiProxy, $qnt=2, $timeout=1, $cb_ok, $cb_err, $curl, Loop
 }
 
 function testProxy($url, $ipport, $timeout=3, $cb_ok, $cb_err, $curl, LoopInterface $loop) {
-	echo "-----> entrou na 53, test proxy... " . PHP_EOL;
+	//echo "-----> entrou na 53, test proxy... " . PHP_EOL;
 
 //	for ($x = 0; $x <= 1; $x++) {
 		$payload = [
@@ -122,7 +131,7 @@ function findProxy($interval=1.0, $timer, $curl, &$proxy, $getApiProxy, $url, &$
 		$maxProxys = 3;
 		
 		if(count($proxy) > $maxProxys){
-			echo "paro a lasanha, tem mais q 5";
+			//echo "paro a lasanha, tem mais q 5";
 			$loop->cancelTimer($timer);
 		}
 
@@ -153,30 +162,35 @@ function findProxy($interval=1.0, $timer, $curl, &$proxy, $getApiProxy, $url, &$
 	});
 }
 
-$verTotalProxy = $loop->addPeriodicTimer($timeTotProxy, function ($timer) use (&$url, $curl, $loop, &$proxy, $getApiProxy, &$proxy_max, &$proxy_cont, &$update, &$maxProxyOn) {
-	echo "----> ver total proxys:> ".count($proxy)." ---\n";
+$verTotalProxy = $loop->addPeriodicTimer($timeTotProxy, function ($timer) use (&$url, $curl, $loop, &$proxy, $getApiProxy, &$proxy_max, &$proxy_cont, &$update, &$maxProxyOn, $telegram, $chatId) {
+	$msg = "->iniciando verificacao do cache proxys: ".count($proxy);
+	sendMsg($msg, $chatId, $telegram);
 
 	if(count($proxy) < $maxProxyOn) {
 		if($proxy_max > $proxy_cont){
 			// findProxy($interval=1.0, $timer, $curl, &$proxy, $getApiProxy, $url, &$proxy_cont, &$update, LoopInterface $loop)
 			findProxy(1.0, $timer, $curl, $proxy, $getApiProxy, $url, $proxy_cont, $update, $loop);
-			echo ">>>pouco proxy, buscar mais...\n";			
+			$msg = "--> pouco proxy, buscar mais...";			
+			sendMsg($msg, $chatId, $telegram);
 		}else{
 			if(count($proxyof) > 0){
-				echo "\n========= copiando proxys off e jogando para novos testes... ===========\n";
-				echo "\nTotal de proxyof: ". count($proxyof);
-				echo "\nTotal proxy Onnn: ". count($proxy);
-				print_r($proxy);
+
+				$msg = "========= copiando proxys off e jogando para novos testes... ===========".
+						"\n--->Total de proxyof: ". count($proxyof);
+				sendMsg($msg, $chatId, $telegram);
+
 				$proxy = $proxyof;
 				unset($proxyof);
-				echo "\nTotal proxy Onnn atualizadoooo????: ". count($proxy);
-				print_r($proxy);
+				$msg = "\nLista de proxys atualizado total de: ". count($proxy);
+				sendMsg($msg, $chatId, $telegram);
 			}else{
-				echo "\n\n\n\n>>>pouco proxy, nao pode buscar mais, ultrapassou o limite maximo.........\n\n\n";
+				$msg = "---->>> pouco proxy, nao pode buscar mais, ultrapassou o limite maximo..";
+				sendMsg($msg, $chatId, $telegram);
 			}
 		}
 	}else{
-		echo "cache de proxys ok......";
+		$msg = "cache de proxys ok, nada a fazer...";
+		sendMsg($msg, $chatId, $telegram);
 	}
 
 });
@@ -190,7 +204,7 @@ function searcharray($value, $key, $array) {
    return null;
 }
 
-$testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$url, &$urlstr, $curl, $loop, &$proxy, &$proxyof, &$update) {
+$testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$url, &$urlstr, $curl, $loop, &$proxy, &$proxyof, &$update, $telegram, $chatId) {
 
 	if(count($proxy) > 0){
 
@@ -200,7 +214,7 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 			$lifetime = diffHoras($redeok['start'], date("Y-m-d H:i:s"));
 			unset($redeok['debug']);
 		}else{
-			echo "\n\n\n\n ======================== rede ok nao eh array =========================== \n\n\n\n";
+			//echo "\n\n\n\n ======================== rede ok nao eh array =========================== \n\n\n\n";
 		}
 
 
@@ -223,7 +237,7 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 
 				testProxy(
 					$urltest, $ipport, 3,
-					function(MCurl\Result $result) use (&$proxy, $ipport, &$proxyof, &$urlstr, &$url, &$update){
+					function(MCurl\Result $result) use (&$proxy, $ipport, &$proxyof, &$urlstr, &$url, &$update, $telegram, $chatId){
 
 						if(!stristr($result, $urlstr)){
 
@@ -241,7 +255,8 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 								array_push($proxyof, $prpayl);
 						    	unset($proxy[$key]);
 						    	$update =  date("Y-m-d H:i:s");
-								echo "\n{$ipport} deletado da lista --------->";					    	
+								$msg = "-----> {$ipport} deletado da lista";	
+								sendMsg($msg, $chatId, $telegram);				    	
 							}
 						}else{
 							if (($key = searcharray($ipport, 'proxy', $proxy)) !== false) {
@@ -261,7 +276,7 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 							}
 						}
 					},
-					function(Exception $e) use(&$proxy, $ipport, &$proxyof, &$url) {
+					function(Exception $e) use(&$proxy, $ipport, &$proxyof, &$url, $telegram, $chatId) {
 						if (($key = searcharray($ipport, 'proxy', $proxy)) !== false) {
 
 							if(isset($proxy[$key]['start'])){
@@ -278,20 +293,23 @@ $testAllProxy = $loop->addPeriodicTimer($timeAllProxy, function ($timer) use (&$
 							array_push($proxyof, $prpayl);
 
 							unset($proxy[$key]);
-							echo "\n{$ipport} deletado da lista --------->";
+							$msg = "------> {$ipport} deletado da lista --------->";
+							sendMsg($msg, $chatId, $telegram);
+
 							$update =  date("Y-m-d H:i:s");
 							}
 						}
-						echo $e->result->info['url'], "\t", $e->getMessage(), " --- Fim.....", PHP_EOL;
-				  		//echo $e->result->info['url'] . ' - Fim..' . PHP_EOL;
+						$msg = $e->result->info['url'] . "\t" . $e->getMessage() . " --- Fim.....";
+						sendMsg($msg, $chatId, $telegram);
 					},
 					$curl, $loop
 				);
 			}
 		}
 	}else{
-		echo "nenhum proxy a verificar...";
+		$msg = "nenhum proxy a verificar...";
 		$update =  date("d/m/Y H:i:s");
+		sendMsg($msg, $chatId, $telegram);
 	}
 
 });
