@@ -319,14 +319,26 @@ $server->get('/proxyOff', function (Request $request, callable $next) use (&$sta
 
 $server->get('/proxy', function (Request $request, callable $next) use (&$status, &$url, &$urlstr, &$getApiProxy, &$proxy, &$proxyof, &$update, &$start, &$proxy_max, &$proxy_cont, &$timeAllProxy, &$timeTotProxy) {
 	if(count($proxy) > 0){
-		$rand_keys = array_rand($proxy, 1);
-		$redeok = $proxy[$rand_keys];
-		if(is_array($redeok)){
-			if($redeok['status'] != false) {
-				$lifetime = diffHoras($redeok['start'], date("Y-m-d H:i:s"));
-				unset($redeok['debug']);
-			}else{
-				$redeok = ['fazer loop ???????'];
+		$proxylist = $proxy;
+		$proxylistok = [];
+
+		foreach($proxylist as $vrprlist){
+			if(isset($vrprlist['status']) && ($vrprlist['status'] == 'true')) {
+				$proxylistok[] = $vrprlist;
+			}
+		}
+		if(count($proxylistok) == 0) {
+			$redeok = ['aguarde alguns instantes...'];
+		}else{
+			$rand_keys = array_rand($proxylistok, 1);
+			$redeok = $proxylistok[$rand_keys];
+			if(is_array($redeok)){
+				if($redeok['status'] != false) {
+					$lifetime = diffHoras($redeok['start'], date("Y-m-d H:i:s"));
+					unset($redeok['debug']);
+				}else{
+					$redeok = ['fazer loop ???????'];
+				}
 			}
 		}
 	}else {
